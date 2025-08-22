@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, SlashCommandBuilder, Events, InteractionType } = require('discord.js');
 const express = require('express');
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Přihlášení bota
@@ -17,26 +18,26 @@ client.on('ready', async () => {
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName === 'team') {
-        const modal = new ModalBuilder().setCustomId('teamForm').setTitle('Registrace týmu');
+        const modal = new ModalBuilder()
+            .setCustomId('teamForm')
+            .setTitle('Registrace týmu');
 
-        // 5 ActionRow, každý max 2 inputy
+        // 5 ActionRow - každý jen jeden TextInput
         modal.addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder().setCustomId('teamName').setLabel('Název týmu').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('captainName').setLabel('Kapitán (nick)').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('captainName').setLabel('Kapitán').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('captainDc').setLabel('Kapitán (Discord tag)').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('player2').setLabel('Hráč 2').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('player2').setLabel('Hráč 2').setStyle(TextInputStyle.Short).setRequired(true),
                 new TextInputBuilder().setCustomId('player3').setLabel('Hráč 3').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('player4').setLabel('Hráč 4').setStyle(TextInputStyle.Short).setRequired(true),
-                new TextInputBuilder().setCustomId('player5').setLabel('Hráč 5').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('player4').setLabel('Hráč 4').setStyle(TextInputStyle.Short).setRequired(true)
             )
         );
 
@@ -50,16 +51,17 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.customId !== 'teamForm') return;
 
     const values = {};
-    ['teamName','captainName','captainDc','player2','player3','player4','player5']
+    ['teamName','captainName','player2','player3','player4']
         .forEach(id => values[id] = interaction.fields.getTextInputValue(id));
 
+    // Fancy embed
     const embed = new EmbedBuilder()
         .setTitle('📢 Nový tým registrován!')
         .setColor(0x00ff00)
         .setDescription(`Tým **${values.teamName}** byl úspěšně zaregistrován!`)
         .addFields(
-            { name: 'Kapitán', value: `${values.captainName} (${values.captainDc})`, inline: false },
-            { name: 'Ostatní hráči', value: `${values.player2}\n${values.player3}\n${values.player4}\n${values.player5}`, inline: false }
+            { name: 'Kapitán', value: values.captainName, inline: false },
+            { name: 'Ostatní hráči', value: `${values.player2}\n${values.player3}\n${values.player4}`, inline: false }
         )
         .setTimestamp();
 
@@ -77,3 +79,4 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('Bot je online ✅'));
 app.listen(PORT, () => console.log(`Web server běží na portu ${PORT}`));
+
