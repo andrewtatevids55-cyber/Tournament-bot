@@ -3,41 +3,40 @@ const express = require('express');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Přihlášení bota
-client.once('ready', () => console.log(`✅ Přihlášen jako ${client.user.tag}`));
+// Bot login
+client.once('ready', () => console.log(`✅ Logged in as ${client.user.tag}`));
 
-// Registrace slash příkazu
+// Register slash command
 client.on('ready', async () => {
     const data = new SlashCommandBuilder()
         .setName('team')
-        .setDescription('Zaregistruj svůj tým do turnaje');
+        .setDescription('Register your team for the tournament');
     await client.application.commands.create(data);
 });
 
-// Otevření modalu (formuláře)
+// Show modal
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName === 'team') {
         const modal = new ModalBuilder()
             .setCustomId('teamForm')
-            .setTitle('Registrace týmu');
+            .setTitle('Team Registration');
 
-        // 5 ActionRow - každý jen jeden TextInput
         modal.addComponents(
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('teamName').setLabel('Název týmu').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('teamName').setLabel('Team Name 🏆').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('captainName').setLabel('Kapitán').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('captainName').setLabel('Captain 👑').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('player2').setLabel('Hráč 2').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('player2').setLabel('Player 2 🎯').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('player3').setLabel('Hráč 3').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('player3').setLabel('Player 3 🎯').setStyle(TextInputStyle.Short).setRequired(true)
             ),
             new ActionRowBuilder().addComponents(
-                new TextInputBuilder().setCustomId('player4').setLabel('Hráč 4').setStyle(TextInputStyle.Short).setRequired(true)
+                new TextInputBuilder().setCustomId('player4').setLabel('Player 4 🎯').setStyle(TextInputStyle.Short).setRequired(true)
             )
         );
 
@@ -45,7 +44,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-// Zpracování formuláře
+// Handle modal submission
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.type !== InteractionType.ModalSubmit) return;
     if (interaction.customId !== 'teamForm') return;
@@ -54,29 +53,29 @@ client.on(Events.InteractionCreate, async interaction => {
     ['teamName','captainName','player2','player3','player4']
         .forEach(id => values[id] = interaction.fields.getTextInputValue(id));
 
-    // Fancy embed
     const embed = new EmbedBuilder()
-        .setTitle('📢 Nový tým registrován!')
-        .setColor(0x00ff00)
-        .setDescription(`Tým **${values.teamName}** byl úspěšně zaregistrován!`)
+        .setTitle(`📢 New Team Registered!`)
+        .setColor(0x1abc9c) // Fancy turquoise color
+        .setDescription(`Team **${values.teamName}** has been successfully registered!`)
         .addFields(
-            { name: 'Kapitán', value: values.captainName, inline: false },
-            { name: 'Ostatní hráči', value: `${values.player2}\n${values.player3}\n${values.player4}`, inline: false }
+            { name: '👑 Captain', value: values.captainName, inline: false },
+            { name: '🎯 Players', value: `• ${values.player2}\n• ${values.player3}\n• ${values.player4}`, inline: false }
         )
-        .setTimestamp();
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/616/616408.png') // Example trophy icon
+        .setTimestamp()
+        .setFooter({ text: 'Tournament Registration', iconURL: 'https://cdn-icons-png.flaticon.com/512/190/190411.png' });
 
-    await interaction.reply({ content: `✅ Tým **${values.teamName}** byl úspěšně registrován!`, ephemeral: true });
+    await interaction.reply({ content: `✅ Team **${values.teamName}** has been successfully registered!`, ephemeral: true });
 
     const logChannel = interaction.guild.channels.cache.find(c => c.name === 'turnaj-teams');
     if (logChannel) await logChannel.send({ embeds: [embed] });
 });
 
-// Přihlášení bota
+// Bot login
 client.login(process.env.TOKEN);
 
-// Express server pro Render port
+// Express server for Render port
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('Bot je online ✅'));
-app.listen(PORT, () => console.log(`Web server běží na portu ${PORT}`));
-
+app.get('/', (req, res) => res.send('Bot is online ✅'));
+app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
