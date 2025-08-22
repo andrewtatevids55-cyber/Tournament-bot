@@ -1,0 +1,13 @@
+{
+  "name": "tournament-bot",
+  "version": "1.0.0",
+  "description": "Discord turnajový bot s formulářem",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "express": "^4.18.2"
+  }
+}
