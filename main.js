@@ -1,50 +1,34 @@
-const { 
-  Client, 
-  GatewayIntentBits, 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  ModalBuilder, 
-  TextInputBuilder, 
-  TextInputStyle, 
-  Partials 
-} = require("discord.js");
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, Events } = require("discord.js");
 const express = require("express");
+require("dotenv").config();
 
-// --- Keep Alive (Render hosting) ---
-const app = express();
-app.get("/", (req, res) => res.send("Bot is running"));
-app.listen(10000, () => console.log("🌍 Web server is running"));
-
-// --- Discord Client ---
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-  partials: [Partials.Channel]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  partials: [Partials.Channel],
 });
 
-// Cooldown map
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+// keep alive webserver
+app.get("/", (req, res) => {
+  res.send("Bot is running!");
+});
+app.listen(PORT, () => console.log(`🌍 Web server is running`));
+
+// cooldown storage
 const cooldown = new Map();
 
 client.once("ready", async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
-  const channel = client.channels.cache.find(
-    c => c.name === "📋《𝐫𝐞𝐠𝐢𝐬𝐭𝐞𝐫》"
-  );
-  if (!channel) {
-    console.log("⚠️ Register channel not found!");
-    return;
-  }
+  const channel = client.channels.cache.find(c => c.name === "📋《𝐫𝐞𝐠𝐢𝐬𝐭𝐞𝐫》");
+  if (!channel) return console.log("❌ Register channel not found.");
 
-  // Embed with button
   const embed = new EmbedBuilder()
-    .setColor("Black")
     .setTitle("**Team Create**")
-    .setDescription(
-      "Click the green button below to register your team into the tournament.\n\n" +
-      "➡️ Please use Minecraft nicknames."
-    );
+    .setColor("#000000")
+    .setDescription("Click the green button to register your team into the tournament.\n- Please use Minecraft nicks");
 
   const button = new ButtonBuilder()
     .setCustomId("registerTeam")
@@ -53,30 +37,21 @@ client.once("ready", async () => {
 
   const row = new ActionRowBuilder().addComponents(button);
 
-  await channel.send({ embeds: [embed], components: [row] });
+  // clear old messages and send fresh one
+  const messages = await channel.messages.fetch({ limit: 10 });
+  channel.bulkDelete(messages);
+
+  channel.send({ embeds: [embed], components: [row] });
 });
 
-// Button click
-client.on("interactionCreate", async interaction => {
+client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isButton()) {
     if (interaction.customId === "registerTeam") {
-      const userId = interaction.user.id;
-      const now = Date.now();
-      const cooldownTime = 24 * 60 * 60 * 1000; // 24h
-
-      if (cooldown.has(userId) && now - cooldown.get(userId) < cooldownTime) {
-        const remaining = Math.ceil(
-          (cooldownTime - (now - cooldown.get(userId))) / (1000 * 60 * 60)
-        );
-        return interaction.reply({
-          content: `⏳ You can register again in **${remaining}h**.`,
-          ephemeral: true
-        });
+      const lastUsed = cooldown.get(interaction.user.id);
+      if (lastUsed && Date.now() - lastUsed < 24 * 60 * 60 * 1000) {
+        return interaction.reply({ content: "⏳ You can only register once every 24 hours!", ephemeral: true });
       }
 
-      cooldown.set(userId, now);
-
-      // Modal
       const modal = new ModalBuilder()
         .setCustomId("teamForm")
         .setTitle("Team Registration");
@@ -89,27 +64,24 @@ client.on("interactionCreate", async interaction => {
 
       const captain = new TextInputBuilder()
         .setCustomId("captain")
-        .setLabel("Captain (Nick & Discord)")
+        .setLabel("Captain (Minecraft Nick)")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
       const player2 = new TextInputBuilder()
         .setCustomId("player2")
-        .setLabel("Player 2 (Nick & Discord)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+        .setLabel("Player 2 (Minecraft Nick)")
+        .setStyle(TextInputStyle.Short);
 
       const player3 = new TextInputBuilder()
         .setCustomId("player3")
-        .setLabel("Player 3 (Nick & Discord)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+        .setLabel("Player 3 (Minecraft Nick)")
+        .setStyle(TextInputStyle.Short);
 
       const player4 = new TextInputBuilder()
         .setCustomId("player4")
-        .setLabel("Player 4 (Nick & Discord)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+        .setLabel("Player 4 (Minecraft Nick)")
+        .setStyle(TextInputStyle.Short);
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(teamName),
@@ -127,23 +99,26 @@ client.on("interactionCreate", async interaction => {
     if (interaction.customId === "teamForm") {
       const teamName = interaction.fields.getTextInputValue("teamName");
       const captain = interaction.fields.getTextInputValue("captain");
-      const player2 = interaction.fields.getTextInputValue("player2");
-      const player3 = interaction.fields.getTextInputValue("player3");
-      const player4 = interaction.fields.getTextInputValue("player4");
+      const player2 = interaction.fields.getTextInputValue("player2") || "—";
+      const player3 = interaction.fields.getTextInputValue("player3") || "—";
+      const player4 = interaction.fields.getTextInputValue("player4") || "—";
 
       const embed = new EmbedBuilder()
-        .setColor("Black")
-        .setTitle("🏆 Team Registered")
-        .setDescription(
-          `**Team Name:** ${teamName}\n\n` +
-          `👑 **Captain:** ${captain}\n` +
-          `👤 **Player 2:** ${player2}\n` +
-          `👤 **Player 3:** ${player3}\n` +
-          `👤 **Player 4:** ${player4}`
+        .setTitle("✅ Team Registered")
+        .setColor("#000000")
+        .setDescription(`🏆 **${teamName}** has been successfully registered!`)
+        .addFields(
+          { name: "👑 Captain", value: captain, inline: true },
+          { name: "🥷 Player 2", value: player2, inline: true },
+          { name: "🥷 Player 3", value: player3, inline: true },
+          { name: "🥷 Player 4", value: player4, inline: true }
         )
-        .setFooter({ text: "Tournament Registration System" });
+        .setThumbnail("https://cdn-icons-png.flaticon.com/512/616/616490.png");
 
       await interaction.reply({ embeds: [embed] });
+
+      // set cooldown
+      cooldown.set(interaction.user.id, Date.now());
     }
   }
 });
