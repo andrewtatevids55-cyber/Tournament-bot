@@ -37,7 +37,7 @@ client.once("ready", async () => {
 
   const embed = new EmbedBuilder()
     .setTitle("**Team Create**")
-    .setColor("#000000")
+    .setColor("#ffffff") // white left stripe
     .setDescription("Click the green button to register your team into the tournament.\n- Please use Minecraft nicknames");
 
   const button = new ButtonBuilder()
@@ -120,9 +120,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (teamsChannel) {
         const embed = new EmbedBuilder()
           .setTitle("Team Registered 🏆")
-          .setColor("#000000")
+          .setColor("#ffffff") // white left stripe
           .addFields(
-            { name: "Team Name", value: teamName, inline: false },
+            { name: "🎯 Team Name", value: teamName, inline: false },
             { name: "🥷 Captain", value: captain, inline: true },
             { name: "🥷 Player 2", value: player2, inline: true },
             { name: "🥷 Player 3", value: player3, inline: true },
