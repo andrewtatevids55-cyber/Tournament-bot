@@ -1,13 +1,14 @@
 {
-  "name": "tournament-bot",
+  "name": "discord-bot",
   "version": "1.0.0",
-  "description": "Discord turnajový bot s formulářem",
+  "description": "Tournament registration bot",
   "main": "main.js",
   "scripts": {
     "start": "node main.js"
   },
   "dependencies": {
-    "discord.js": "^14.11.0",
-    "express": "^4.18.2"
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
   }
 }
